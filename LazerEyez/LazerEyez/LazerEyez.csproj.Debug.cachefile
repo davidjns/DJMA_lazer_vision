@@ -1,0 +1,13 @@
+Content\Models\alien.xnb
+Content\Models\hero.xnb
+Content\Textures\alien.xnb
+Content\Textures\city.xnb
+Content\Textures\hero.xnb
+Content\Textures\crosshair.xnb
+Content\Sounds\alpha_song_v2.xnb
+Content\Sounds\lazershots.xnb
+Content\Sounds\laser-effect-shortened.xnb
+Content\Textures\alien_0.xnb
+Content\Textures\hero_0.xnb
+FaceTrackData.dll
+FaceTrackLib.dll
