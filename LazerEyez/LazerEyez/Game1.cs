@@ -47,6 +47,16 @@ namespace LazerEyez
 
 		public Enemy Number_One;
 
+        enum gameState { play, menu, options };
+        enum Difficulty { easy, medium, hard };
+        gameState gamestate = gameState.menu;
+        Difficulty difficulty = Difficulty.medium;
+        MouseState clicked; MouseState Prevclicked;
+        SpriteFont font;
+        List<MenuButton> menuButtons = new List<MenuButton>();
+        List<MenuButton> optionButtons = new List<MenuButton>();
+        bool muteState = false;
+        
 
 		public Game1()
 		{
@@ -64,6 +74,19 @@ namespace LazerEyez
             {
                 OpenKinect(kinect);
             }
+
+            IsMouseVisible = true;
+            menuButtons.Add(new MenuButton(buttonBackground, new Rectangle((int)screenWidth/2 - 80, (int)screenHeight/2, 120, 64), "Play"));
+            menuButtons.Add(new MenuButton(buttonBackground, new Rectangle((int)screenWidth / 2 - 120, ((int)screenHeight / 2 + 100), 220, 64), "Options"));
+            menuButtons.Add(new MenuButton(buttonBackground, new Rectangle((int)screenWidth/2 - 80, ((int)screenHeight/2 + 200), 120, 64), "Exit"));
+
+            optionButtons.Add(new MenuButton(buttonBackground, new Rectangle((int)screenWidth/2 - 80, (int)screenHeight/2, 120, 64), "Mute"));
+            optionButtons.Add(new MenuButton(buttonBackground, new Rectangle((int)screenWidth/2 - 280, (int)screenHeight/2 + 100, 120, 64), "Easy"));
+            optionButtons.Add(new MenuButton(buttonBackground, new Rectangle((int)screenWidth / 2 - 80, (int)screenHeight / 2 + 100, 180, 64), "Medium"));
+            optionButtons.Add(new MenuButton(buttonBackground, new Rectangle((int)screenWidth/2 + 180, (int)screenHeight/2 + 100, 120, 64),"Hard"));
+            optionButtons.Add(new MenuButton(buttonBackground, new Rectangle(20, 20, 120, 64), "Back"));
+            
+            
 		}
 
         void KinectSensors_StatusChanged(object sender, StatusChangedEventArgs e)
@@ -236,8 +259,15 @@ namespace LazerEyez
 		SoundEffectInstance songInstance;
 		SoundEffectInstance beepInstance;
 		Texture2D cityTexture;
+        Texture2D titleTexture;
 		Texture2D crosshair;
+        Texture2D buttonBackground;
+        Texture2D buttonSelected;
+        Texture2D volumeOn;
+        Texture2D volumeOff;
 		Vector2 spritePosition = Vector2.Zero;
+        
+
 		//end view code
 		protected override void LoadContent()
 		{
@@ -247,13 +277,19 @@ namespace LazerEyez
 			// Create a new SpriteBatch, which can be used to draw textures.
 			spriteBatch = new SpriteBatch(GraphicsDevice);
 
-
+            //sounds
 			mySong = Content.Load<SoundEffect>("Sounds//alpha_song_v2");
 			beepTest = Content.Load<SoundEffect>("Sounds//laser-effect-shortened");
 			songInstance = mySong.CreateInstance();
 			beepInstance = beepTest.CreateInstance();
 
-
+            //menus
+            font = Content.Load<SpriteFont>("Fonts/SpriteFont1");
+            buttonBackground = Content.Load<Texture2D>("Textures\\menuButton");
+            buttonSelected = Content.Load<Texture2D>("Textures\\menuButtonSelected");
+            titleTexture = Content.Load<Texture2D>("Textures\\titleScreen");
+            volumeOn = Content.Load<Texture2D>("Textures\\volumeOn");
+            volumeOff = Content.Load<Texture2D>("Textures\\volumeOff");
 
 			//view code
 
@@ -285,50 +321,106 @@ namespace LazerEyez
 		/// <param name="gameTime">Provides a snapshot of timing values.</param>
 		protected override void Update(GameTime gameTime)
 		{
-			if (beepInstance.State == SoundState.Stopped)
-			{
-				songInstance.IsLooped = true;
-				beepInstance.IsLooped = true;
-				beepInstance.Volume = 1.0f;
-				songInstance.Volume = 0.5f;
-				beepInstance.Play();
-				songInstance.Play();
-			}
+            Prevclicked = clicked;
+            clicked = Mouse.GetState();
+            if (gamestate == gameState.menu)
+            {
+                foreach (MenuButton m in menuButtons)
+                {
+                    m.MouseOver(clicked);
+                    if (m.text == "Play" && m.selected == true && clicked.LeftButton == ButtonState.Pressed
+                        && Prevclicked.LeftButton == ButtonState.Released)
+                        gamestate = gameState.play;
+                    if (m.text == "Options" && m.selected == true && clicked.LeftButton == ButtonState.Pressed
+                        && Prevclicked.LeftButton == ButtonState.Released)
+                        gamestate = gameState.options;
+                    if (m.text == "Exit" && m.selected == true && clicked.LeftButton == ButtonState.Pressed
+                        && Prevclicked.LeftButton == ButtonState.Released)
+                        Exit();
+                }
+            }
 
-			else
-			{
-				beepInstance.Resume();
-			}
-			try
-			{
-				//This is the only time that the Model Time should be set
-				Game_Model.Instance.Time_Step = gameTime.ElapsedGameTime;
+            if(gamestate == gameState.options)
+            {
+                foreach(MenuButton m in optionButtons)
+                {
+                    m.MouseOver(clicked);
+                    if(m.text == "Mute" && m.selected == true && clicked.LeftButton == ButtonState.Pressed
+                        && Prevclicked.LeftButton == ButtonState.Released)
+                        {
+                            if(muteState == true)
+                            {
+                                SoundEffect.MasterVolume = 1.0f;
+                                muteState = false;
+                            }
+                            else if (muteState == false)
+                            {
+                                SoundEffect.MasterVolume = 0.0f;
+                                muteState = true;
+                            }
+                        }
 
-				/*** for now, just getting the position of the mouse for the crosshair*/
-                float drawY = (float)((screenHeight / 2F) * (1F - pitch / (float)yThresh));
-                float drawX = (float)((screenWidth / 2F) * (1F - yaw / (float)xThresh));
-                Vector2 crosshairPosition = new Vector2(drawX, drawY);
-				//Vector2 crosshairPosition = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
-				Game_Model.Instance.Update_Crosshair(crosshairPosition);
-				Debug.WriteLine("Mouse X coordinate: " + Mouse.GetState().X + "\nMouse Y coordinate: " + Mouse.GetState().Y);
-				Game_Model.Instance.Update();
+                    if (m.text == "Easy" && m.selected == true && clicked.LeftButton == ButtonState.Pressed
+                        && Prevclicked.LeftButton == ButtonState.Released)
+                            difficulty = Difficulty.easy;
+                    if (m.text == "Medium" && m.selected == true && clicked.LeftButton == ButtonState.Pressed
+                        && Prevclicked.LeftButton == ButtonState.Released)
+                        difficulty = Difficulty.medium;
+                    if (m.text == "Hard" && m.selected == true && clicked.LeftButton == ButtonState.Pressed
+                        && Prevclicked.LeftButton == ButtonState.Released)
+                        difficulty = Difficulty.hard;
+                    if (m.text == "Back" && m.selected == true && clicked.LeftButton == ButtonState.Pressed
+                        && Prevclicked.LeftButton == ButtonState.Released)
+                        gamestate = gameState.menu;
+                }
+            }
+            if (gamestate == gameState.play)
+            {
+                if (beepInstance.State == SoundState.Stopped)
+                {
+                    songInstance.IsLooped = true;
+                    beepInstance.IsLooped = true;
+                    beepInstance.Volume = 1.0f;
+                    songInstance.Volume = 0.5f;
+                    beepInstance.Play();
+                    songInstance.Play();
+                }
 
-				// Allows the game to exit
-				if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
-					this.Exit();
+                else
+                {
+                    beepInstance.Resume();
+                }
+                try
+                {
+                    //This is the only time that the Model Time should be set
+                    Game_Model.Instance.Time_Step = gameTime.ElapsedGameTime;
 
-				// TODO: Add your update logic here 
-					//Should really be in game model, only if neccesary put it here
+                    /*** for now, just getting the position of the mouse for the crosshair*/
+                    float drawY = (float)((screenHeight / 2F) * (1F - pitch / (float)yThresh));
+                    float drawX = (float)((screenWidth / 2F) * (1F - yaw / (float)xThresh));
+                    Vector2 crosshairPosition = new Vector2(drawX, drawY);
+                    //Vector2 crosshairPosition = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+                    Game_Model.Instance.Update_Crosshair(crosshairPosition);
+                    Debug.WriteLine("Mouse X coordinate: " + Mouse.GetState().X + "\nMouse Y coordinate: " + Mouse.GetState().Y);
+                    Game_Model.Instance.Update();
 
-				base.Update(gameTime);
-			}
-			catch (Exception e)
-			{
-				Debug.Print(e.Message);
-				//And Continue;				
-			}
-			finally
-			{}
+                    // Allows the game to exit
+                    if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
+                        this.Exit();
+
+                    // TODO: Add your update logic here 
+                    //Should really be in game model, only if neccesary put it here
+
+                    base.Update(gameTime);
+                }
+                catch (Exception e)
+                {
+                    Debug.Print(e.Message);
+                    //And Continue;				
+                }
+                finally
+                { }
+            }
 			
 		}
 		//view code
@@ -352,77 +444,120 @@ namespace LazerEyez
 			//view code
 			//drawing the city as the background
 			spriteBatch.Begin();
-			spriteBatch.Draw(cityTexture, spritePosition, Color.White);
-			spriteBatch.End();
-
-			Matrix[] transforms = new Matrix[hero.Bones.Count];
-			hero.CopyAbsoluteBoneTransformsTo(transforms);
-			//drawing the first hero and making it rotate
-
-			
-			foreach(ModelMesh mesh in hero.Meshes)
-			{
-				foreach(BasicEffect effect in mesh.Effects)
-				{
-					effect.EnableDefaultLighting();
-					effect.World = transforms[mesh.ParentBone.Index] *
-						Matrix.CreateRotationY(modelRotation) *
-						Matrix.CreateTranslation(heroPosition);
-					effect.View = Matrix.CreateLookAt(cameraPosition, Vector3.Zero, Vector3.Up);
-					effect.Projection = Matrix.CreatePerspectiveFieldOfView(
-						MathHelper.ToRadians(45.0f), aspectRatio,
-						1.0f, 10000.0f);
-				}
-				mesh.Draw();
-			}
-
-			foreach (Enemy myEnemy in alienList)
-			{
-				foreach (ModelMesh mesh in alien.Meshes)
-				{
-					foreach (BasicEffect effect in mesh.Effects)
-					{
-
-							effect.EnableDefaultLighting();
-							effect.World = transforms[mesh.ParentBone.Index] *
-								Matrix.CreateRotationY(modelRotation) *
-								Matrix.CreateTranslation(myEnemy.Position);
-							effect.View = Matrix.CreateLookAt(cameraPosition, Vector3.Zero, Vector3.Up);
-							effect.Projection = Matrix.CreatePerspectiveFieldOfView(
-								MathHelper.ToRadians(45.0f), aspectRatio,
-								1.0f, 10000.0f);
-						}
-					mesh.Draw();
-					}
-					
-			}
-			
-			//end view code
-
-            
-
-			//Crosshair
-			spriteBatch.Begin();
-            spriteBatch.Draw(crosshair, Game_Model.Instance.beam.Crosshair2D, Color.White);
-            
-            //Rendering Kill Count String
-            SpriteFont gmfnt = Content.Load<SpriteFont>("gamefont");
-            String killcnt = 
-                "Aliens Destroyed: " + Game_Model.Instance.stats_p1.Kills;
-            Vector2 FontMsr = gmfnt.MeasureString(killcnt);
-            spriteBatch.DrawString(gmfnt, killcnt, new Vector2(0, 0), Color.Black,
-                0, new Vector2(0,0), 0.5f, SpriteEffects.None, 0);
+            if (gamestate == gameState.menu)
+            {
                 
-            
-            
-			spriteBatch.End();
+                spriteBatch.Draw(titleTexture, new Rectangle((int)spritePosition.X, (int)spritePosition.Y, (int)screenWidth, (int)screenHeight), null, Color.White);
+                foreach (MenuButton m in menuButtons)
+                {
+                    m.Draw(spriteBatch, font, buttonBackground);
+                }
+            }
+
+            if (gamestate == gameState.options)
+            {
+                spriteBatch.Draw(titleTexture, new Rectangle((int)spritePosition.X, (int)spritePosition.Y, 
+                (int)screenWidth, (int)screenHeight), null, Color.White);
+                // easy button is located at new Rectangle((int)screenWidth/2 - 280, (int)screenHeight/2 + 100, 120, 64)
+                //medium is new Rectangle((int)screenWidth / 2 - 80, (int)screenHeight / 2 + 100, 180, 64), "Medium"));
+                //hard is new Rectangle((int)screenWidth / 2 + 180, (int)screenHeight / 2 + 100, 120, 64), "Hard"));
+                if (difficulty == Difficulty.easy)
+                    spriteBatch.Draw(buttonSelected, new Rectangle((int)screenWidth / 2 - 300, (int)screenHeight / 2 + 80, 160, 104), null, Color.White);
+                if (difficulty == Difficulty.medium)
+                    spriteBatch.Draw(buttonSelected, new Rectangle((int)screenWidth / 2 - 100, (int)screenHeight / 2 + 80, 220, 104), null, Color.White);
+                if (difficulty == Difficulty.hard)
+                    spriteBatch.Draw(buttonSelected, new Rectangle((int)screenWidth / 2 + 160, (int)screenHeight / 2 + 80, 160, 104), null, Color.White);
 
 
-			//Game_Model.Instance.Draw();
-		
-			// TODO: Add your drawing code here
+                foreach (MenuButton m in optionButtons)
+                {
+                    m.Draw(spriteBatch, font, buttonBackground);
+                }
 
-			base.Draw(gameTime);
+                if(muteState == false)
+                    spriteBatch.Draw(volumeOn, new Rectangle((int)screenWidth/2 + 100, (int)screenHeight/2, 120, 64), Color.White);
+                if(muteState == true)
+                    spriteBatch.Draw(volumeOff, new Rectangle((int)screenWidth / 2 + 100, (int)screenHeight / 2, 120, 64), Color.White);
+            }
+
+
+            spriteBatch.End();
+
+            if(gamestate == gameState.play)
+            {
+                spriteBatch.Begin();
+                spriteBatch.Draw(cityTexture, new Rectangle((int)spritePosition.X, (int)spritePosition.Y, (int)screenWidth, (int)screenHeight), null, Color.White);
+                spriteBatch.End();
+
+                Matrix[] transforms = new Matrix[hero.Bones.Count];
+                hero.CopyAbsoluteBoneTransformsTo(transforms);
+                //drawing the first hero and making it rotate
+
+
+                foreach (ModelMesh mesh in hero.Meshes)
+                {
+                    foreach (BasicEffect effect in mesh.Effects)
+                    {
+                        effect.EnableDefaultLighting();
+                        effect.World = transforms[mesh.ParentBone.Index] *
+                            Matrix.CreateRotationY(modelRotation) *
+                            Matrix.CreateTranslation(heroPosition);
+                        effect.View = Matrix.CreateLookAt(cameraPosition, Vector3.Zero, Vector3.Up);
+                        effect.Projection = Matrix.CreatePerspectiveFieldOfView(
+                            MathHelper.ToRadians(45.0f), aspectRatio,
+                            1.0f, 10000.0f);
+                    }
+                    mesh.Draw();
+                }
+
+                foreach (Enemy myEnemy in alienList)
+                {
+                    foreach (ModelMesh mesh in alien.Meshes)
+                    {
+                        foreach (BasicEffect effect in mesh.Effects)
+                        {
+
+                            effect.EnableDefaultLighting();
+                            effect.World = transforms[mesh.ParentBone.Index] *
+                                Matrix.CreateRotationY(modelRotation) *
+                                Matrix.CreateTranslation(myEnemy.Position);
+                            effect.View = Matrix.CreateLookAt(cameraPosition, Vector3.Zero, Vector3.Up);
+                            effect.Projection = Matrix.CreatePerspectiveFieldOfView(
+                                MathHelper.ToRadians(45.0f), aspectRatio,
+                                1.0f, 10000.0f);
+                        }
+                        mesh.Draw();
+                    }
+
+                }
+
+                //end view code
+
+
+
+                //Crosshair
+                spriteBatch.Begin();
+                spriteBatch.Draw(crosshair, Game_Model.Instance.beam.Crosshair2D, Color.White);
+
+                //Rendering Kill Count String
+                SpriteFont gmfnt = Content.Load<SpriteFont>("gamefont");
+                String killcnt =
+                    "Aliens Destroyed: " + Game_Model.Instance.stats_p1.Kills;
+                Vector2 FontMsr = gmfnt.MeasureString(killcnt);
+                spriteBatch.DrawString(gmfnt, killcnt, new Vector2(0, 0), Color.Black,
+                    0, new Vector2(0, 0), 0.5f, SpriteEffects.None, 0);
+
+
+
+                spriteBatch.End();
+
+
+                //Game_Model.Instance.Draw();
+
+                // TODO: Add your drawing code here
+
+                base.Draw(gameTime);
+            }
 		}
 	}
 }

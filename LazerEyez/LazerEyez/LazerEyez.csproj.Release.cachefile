@@ -10,11 +10,5 @@ Content\Sounds\laser-effect-shortened.xnb
 Content\gamefont.xnb
 Content\Textures\alien_0.xnb
 Content\Textures\hero_0.xnb
-Content\Fonts\SpriteFont1.xnb
-Content\Textures\menuButton.xnb
-Content\Textures\titleScreen.xnb
-Content\Textures\volumeOn.xnb
-Content\Textures\volumeOff.xnb
-Content\Textures\menuButtonSelected.xnb
 FaceTrackData.dll
 FaceTrackLib.dll
