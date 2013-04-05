@@ -130,6 +130,8 @@
     <Compile Include="View\View.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="FaceTrackData.dll" />
+    <Content Include="FaceTrackLib.dll" />
     <Content Include="Game.ico" />
     <Content Include="GameThumbnail.png" />
   </ItemGroup>
